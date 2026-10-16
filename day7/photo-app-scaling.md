@@ -75,19 +75,20 @@ Feed requests served by the app read cached results first and use the database r
 - **Job queue:** Buffers thumbnail tasks so image processing can run asynchronously and absorb bursts without delaying upload responses.
 - **Thumbnail worker:** Consumes queued jobs, creates a smaller thumbnail from each original, stores it in object storage, and updates the photo metadata when processing finishes.
 
-## Photo upload flow
+## Photo upload lifecycle
 
-1. The user submits an upload request to an app server through the load balancer; the app authenticates the user, validates the file details, and creates a pending photo record in the primary database.
-2. The app returns a short-lived, authorized upload URL for the original in object storage, so the large file does not need to pass through an app server.
-3. The client uploads the original photo directly to object storage, which confirms that the object was stored.
-4. After a successful upload, the app (or an object-storage event handler) places a thumbnail job containing the photo ID and object key on the queue.
-5. A thumbnail worker takes the job, reads the original from object storage, generates the 50 KB thumbnail, and saves it back to object storage.
-6. The worker updates the photo record in the primary database to mark processing complete and record the thumbnail object key; the update replicates to the read replica.
-7. Feed requests can now include the photo, and the CDN delivers the original or thumbnail from object storage, caching it when appropriate.
+1. The client sends an upload-initiation request through the load balancer; an app server authenticates the user, validates the requested file type and size, creates a `pending` photo record in the primary database, and returns a short-lived upload URL scoped to that photo's object key.
+2. The client uploads the original directly to object storage, keeping the large file off the app servers; the storage service confirms the completed object.
+3. The client reports completion to the app, which verifies the object exists and matches the expected owner and upload constraints, then changes the photo state to `uploaded`.
+4. The app enqueues a thumbnail job with the photo ID and object key; the job is safe to retry, so a repeated notification does not create duplicate photo records or corrupt the final state.
+5. A thumbnail worker consumes the job, reads the original from object storage, creates the 50 KB thumbnail, and saves it under the photo's thumbnail key.
+6. Once the thumbnail is stored, the worker updates the primary database record with its key and changes the state to `ready`; queue retries handle transient processing errors, while permanent failures are recorded for recovery rather than marking an incomplete photo ready.
+7. The app includes `ready` photos in feed results, and the CDN serves the original or thumbnail from object storage, caching it where appropriate; the owner can be shown an upload/processing state before then.
+8. If the client never completes its upload, the record remains `pending`; an expiry/cleanup process can remove the abandoned record and any partial object.
 
 ## Trade-offs
 
-- **Direct-to-object-storage uploads reduce app-server bandwidth and scale better for large files, but require short-lived upload authorization and careful validation so users can only upload permitted objects.**
-- **Asynchronous thumbnailing keeps uploads responsive and handles traffic bursts, but a newly uploaded photo may appear without its thumbnail until the worker finishes; the feed should show a processing state or use the original temporarily.**
-- **Caching and read replicas increase feed throughput and reduce latency, but cached feeds can be briefly stale and replica lag can delay the visibility of recent changes.**
-- **Retaining every original and thumbnail makes old photos available, but the estimated storage grows by about 748.25 TB per year before replication and backups, so retention and lifecycle policies may be needed as the app grows.**
+- **Read replicas and feed caches increase read capacity and reduce latency, but replication lag or stale cache entries can hide a newly uploaded photo from a feed immediately after upload. For read-your-writes consistency, the app can temporarily include the owner's new photo from a write-through cache or route that owner's feed reads to the primary; this adds cache invalidation or primary-database load, so ordinary feed reads can continue using the replica and accept brief staleness.**
+- **Asynchronous thumbnailing makes upload responses fast and absorbs processing bursts, but photos are not fully ready immediately. Keep the photo in a visible `processing` state until both the original and thumbnail are available, and use retries and failure reporting rather than blocking the upload on image processing.**
+- **Direct-to-object-storage uploads reduce app-server bandwidth, but short-lived signed URLs and completion-time object validation are needed to prevent unauthorized or oversized uploads.**
+- **Retaining every original and thumbnail makes old photos available, but storage grows by about 748.25 TB per year before replicas and backups; lifecycle or retention policies control cost but may remove older content.**
