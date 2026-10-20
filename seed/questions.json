@@ -1,0 +1,68 @@
+[
+  {
+    "id": "414d5592-fcb7-4e9f-8207-2e615207d201",
+    "domain": "Cloud concepts",
+    "topic": "Shared responsibility",
+    "difficulty": 1,
+    "question_text": "In the shared responsibility model, who is responsible for securing the physical datacenter?",
+    "options": ["The customer", "The cloud provider", "The internet service provider", "The software developer"],
+    "correct_index": 1,
+    "base_explanation": "The cloud provider is responsible for the physical datacenter and underlying cloud infrastructure. Customer responsibilities depend on the cloud service they use.",
+    "created_at": "2026-10-20T00:00:00.000Z"
+  },
+  {
+    "id": "414d5592-fcb7-4e9f-8207-2e615207d202",
+    "domain": "Cloud concepts",
+    "topic": "IaaS, PaaS, and SaaS",
+    "difficulty": 2,
+    "question_text": "Which cloud service model gives a customer the most control over the operating system?",
+    "options": ["Software as a Service (SaaS)", "Platform as a Service (PaaS)", "Infrastructure as a Service (IaaS)", "Function as a Service (FaaS)"],
+    "correct_index": 2,
+    "base_explanation": "IaaS provides infrastructure such as virtual machines while giving the customer control over the operating system and applications. The provider manages the physical infrastructure.",
+    "created_at": "2026-10-20T00:00:00.000Z"
+  },
+  {
+    "id": "414d5592-fcb7-4e9f-8207-2e615207d203",
+    "domain": "Azure architecture and services",
+    "topic": "Regions and availability zones",
+    "difficulty": 1,
+    "question_text": "What is an Azure region?",
+    "options": ["A billing account for one customer", "A geographic area containing one or more datacenters", "A single virtual machine", "A type of cloud subscription"],
+    "correct_index": 1,
+    "base_explanation": "An Azure region is a geographic area that contains one or more datacenters connected through a low-latency network.",
+    "created_at": "2026-10-20T00:00:00.000Z"
+  },
+  {
+    "id": "414d5592-fcb7-4e9f-8207-2e615207d204",
+    "domain": "Azure architecture and services",
+    "topic": "Storage",
+    "difficulty": 1,
+    "question_text": "A team needs to store images and other unstructured data. Which Azure storage service is a suitable choice?",
+    "options": ["Azure Blob Storage", "Azure Virtual Network", "Azure Policy", "Azure Functions"],
+    "correct_index": 0,
+    "base_explanation": "Azure Blob Storage is designed to store large amounts of unstructured object data, such as images and documents.",
+    "created_at": "2026-10-20T00:00:00.000Z"
+  },
+  {
+    "id": "414d5592-fcb7-4e9f-8207-2e615207d205",
+    "domain": "Azure management and governance",
+    "topic": "Cost management",
+    "difficulty": 1,
+    "question_text": "Which tool can help estimate the cost of Azure products before deployment?",
+    "options": ["Azure Pricing Calculator", "Azure Service Health", "Azure Resource Manager", "Microsoft Entra ID"],
+    "correct_index": 0,
+    "base_explanation": "The Azure Pricing Calculator helps estimate the cost of Azure products and services based on expected usage.",
+    "created_at": "2026-10-20T00:00:00.000Z"
+  },
+  {
+    "id": "414d5592-fcb7-4e9f-8207-2e615207d206",
+    "domain": "Azure management and governance",
+    "topic": "Governance",
+    "difficulty": 2,
+    "question_text": "Which Azure service can help enforce rules, such as allowed resource locations, across subscriptions?",
+    "options": ["Azure Policy", "Azure Monitor", "Azure Virtual Machines", "Azure DNS"],
+    "correct_index": 0,
+    "base_explanation": "Azure Policy helps create, assign, and manage policies that enforce organizational rules and assess compliance across resources.",
+    "created_at": "2026-10-20T00:00:00.000Z"
+  }
+]

@@ -1,0 +1,5 @@
+[functions.explain-answer]
+verify_jwt = true
+
+[functions.study-buddy-chat]
+verify_jwt = true
