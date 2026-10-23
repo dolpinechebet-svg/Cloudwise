@@ -1,4 +1,4 @@
-https://cloudwise-71ym.vercel.app/
+https://vercel.com/dolpinechebet-svgs-projects/cloudwise-71ym/deployments
 # AZ-900 Adaptive Study Buddy (Unofficial)
 
 A mobile-first study companion for beginners preparing for the AZ-900 exam. The current implementation includes project setup, Supabase authentication, onboarding, a balanced 24-question diagnostic, cached AI explanations, an adaptive readiness dashboard, mistake-made flashcards with Leitner spaced repetition, a personalised study planner, and an English-only study chat.
