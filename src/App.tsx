@@ -106,7 +106,7 @@ export default function App() {
     }
     const { data, error } = await supabase
       .from("profiles")
-      .select("display_name, exam_date, hours_per_week")
+      .select("display_name, exam_date, hours_per_week, onboarding_completed")
       .eq("id", activeSession.user.id)
       .maybeSingle();
     if (error) {
@@ -114,7 +114,7 @@ export default function App() {
       setScreen("onboarding");
       return;
     }
-    if (data) {
+    if (data?.onboarding_completed) {
       const nextProfile: Profile = {
         display_name: data.display_name,
         exam_date: data.exam_date,
@@ -405,7 +405,7 @@ export default function App() {
     try {
       if (session && supabase) {
         const { error } = await supabase.from("profiles").upsert(
-          { id: session.user.id, ...nextProfile },
+          { id: session.user.id, ...nextProfile, onboarding_completed: true },
           { onConflict: "id" }
         );
         if (error) {
