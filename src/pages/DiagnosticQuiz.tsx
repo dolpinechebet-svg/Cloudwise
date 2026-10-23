@@ -177,7 +177,7 @@ export default function DiagnosticQuiz({ questions, displayName, practiceTopic, 
       <div className="quiz-intro">
         <div className="eyebrow"><span className="eyebrow-dot" />{"YOUR STARTING POINT"}</div>
         <h1 id="quiz-title">{practiceTopic ? `A quick revisit: ${practiceTopic}.` : "Let's see what you already know."}</h1>
-        <p>{practiceTopic ? "One focused question to help this idea stick." : "15 questions, one at a time. This is just a starting point—not a test."}</p>
+        <p>{practiceTopic ? "One focused question to help this idea stick." : `${questions.length} questions, one at a time. This is just a starting point—not a test.`}</p>
       </div>
 
       <div className="quiz-progress-row">

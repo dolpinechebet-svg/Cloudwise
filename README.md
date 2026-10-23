@@ -1,6 +1,6 @@
 # AZ-900 Adaptive Study Buddy (Unofficial)
 
-A mobile-first study companion for beginners preparing for the AZ-900 exam. The current implementation includes project setup, Supabase authentication, onboarding, a 15-question diagnostic, cached AI explanations, an adaptive readiness dashboard, mistake-made flashcards with Leitner spaced repetition, a personalised study planner, and an English-only study chat.
+A mobile-first study companion for beginners preparing for the AZ-900 exam. The current implementation includes project setup, Supabase authentication, onboarding, a balanced 24-question diagnostic, cached AI explanations, an adaptive readiness dashboard, mistake-made flashcards with Leitner spaced repetition, a personalised study planner, and an English-only study chat.
 
 > **Unofficial AZ-900 study tool. Not affiliated with or endorsed by Microsoft.**
 
@@ -12,7 +12,7 @@ All diagnostic questions in this project are original practice questions based o
 - Supabase email/password and Google OAuth sign-in, when Supabase is configured.
 - A local demo that needs no account or network connection.
 - Onboarding for exam date and weekly study time.
-- A one-question-at-a-time diagnostic with 15 original questions (five from each AZ-900 domain), instant correctness feedback, and beginner-friendly base explanations.
+- A one-question-at-a-time diagnostic with 24 original questions (eight from each AZ-900 domain), instant correctness feedback, and beginner-friendly base explanations.
 - A Supabase `explain-answer` Edge Function that validates the learner, checks an explanation cache keyed by question and selected answer, calls Claude only on cache misses, validates the JSON response, and falls back to the question's trusted base explanation.
 - A per-user limit of 30 uncached explanation requests per 60 seconds, plus a 10-second Claude request timeout.
 - A readiness dashboard with a recency-weighted last-10-attempt accuracy per topic, editable domain weights in `src/config/readiness.ts`, a readiness ring, topic chart, confidence note under 25 attempts, and weak-topic practice links.
@@ -70,9 +70,11 @@ All diagnostic questions in this project are original practice questions based o
 
 7. Without Supabase environment variables, choose **Explore a demo**. Profile and answer progress are saved only in local storage on that device. With Supabase configured, sign in or create an account, then complete onboarding.
 
-### Importing the six seed questions
+### Study materials and question bank
 
-The quiz includes a built-in, balanced 15-question starter set. The seed folder separately contains the requested six database-ready sample records. Import these records with a server-side service-role key (never the browser anon key):
+The `study-materials` folder contains an AZ-900 review guide covering cloud concepts, Azure architecture and services, and management and governance. It complements the practice questions; use Microsoft's current [AZ-900 study guide](https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-900) for the official skills measured and exam updates.
+
+The quiz includes a built-in, balanced 24-question starter set. The seed folder contains 15 database-ready original practice questions (five per domain). Import them with a server-side service-role key (never the browser anon key):
 
 ```powershell
 $env:SUPABASE_URL = "https://your-project.supabase.co"
@@ -80,7 +82,7 @@ $env:SUPABASE_SERVICE_ROLE_KEY = "your-service-role-key"
 npm run seed
 ```
 
-The app combines available database questions with distinct built-in questions to keep the diagnostic balanced at five questions per domain. Answers to database-backed questions are saved to the signed-in user's `attempts` table; built-in questions and demo answers are saved on the device. Add at least five verified questions per domain to use a fully database-backed diagnostic.
+The app combines available database questions with distinct built-in questions to keep the diagnostic balanced at eight questions per domain. Answers to database-backed questions are saved to the signed-in user's `attempts` table; built-in questions and demo answers are saved on the device. Add at least eight verified questions per domain to use a fully database-backed diagnostic.
 
 The third migration adds a unique `(user_id, question_id)` index so a recurring mistake updates the learner's existing flashcard instead of creating duplicates. Run `supabase db push` to apply it.
 

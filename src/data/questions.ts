@@ -58,6 +58,36 @@ export const sampleQuestions: Question[] = [
     base_explanation: "Elasticity is the ability to increase or decrease resources as demand changes."
   },
   {
+    id: "cloud-006",
+    domain: "Cloud concepts",
+    topic: "Cloud benefits",
+    difficulty: 1,
+    question_text: "A company wants its application to continue running if one server fails. Which cloud benefit best describes this goal?",
+    options: ["High availability", "Elasticity", "Consumption-based pricing", "Data governance"],
+    correct_index: 0,
+    base_explanation: "High availability is about keeping a service accessible with minimal interruption, including when a component fails."
+  },
+  {
+    id: "cloud-007",
+    domain: "Cloud concepts",
+    topic: "Capital and operational expenditure",
+    difficulty: 1,
+    question_text: "A company pays a monthly bill based on the Azure resources it used instead of buying servers up front. Which spending model does this illustrate?",
+    options: ["Capital expenditure (CapEx)", "Operational expenditure (OpEx)", "Fixed asset depreciation", "On-premises licensing"],
+    correct_index: 1,
+    base_explanation: "Cloud usage charges are generally operational expenditure (OpEx), paid as services are consumed. Buying physical infrastructure up front is an example of CapEx."
+  },
+  {
+    id: "cloud-008",
+    domain: "Cloud concepts",
+    topic: "Cloud deployment models",
+    difficulty: 2,
+    question_text: "An organization combines its private datacenter with public Azure services. Which cloud deployment model is it using?",
+    options: ["Public cloud", "Private cloud", "Hybrid cloud", "SaaS"],
+    correct_index: 2,
+    base_explanation: "A hybrid cloud combines private infrastructure, such as an organization's datacenter, with public cloud services."
+  },
+  {
     id: "arch-001",
     domain: "Azure architecture and services",
     topic: "Regions and availability zones",
@@ -108,6 +138,36 @@ export const sampleQuestions: Question[] = [
     base_explanation: "Microsoft Entra ID is a cloud-based identity and access management service. Azure role-based access control can be used to grant access to Azure resources."
   },
   {
+    id: "arch-006",
+    domain: "Azure architecture and services",
+    topic: "Azure hierarchy",
+    difficulty: 1,
+    question_text: "Which Azure scope is commonly used to organize resources that are deployed and managed together?",
+    options: ["Availability zone", "Resource group", "Management group", "Region pair"],
+    correct_index: 1,
+    base_explanation: "A resource group is a logical container for Azure resources. Resources can be managed together at this scope, even when their services are deployed in different regions."
+  },
+  {
+    id: "arch-007",
+    domain: "Azure architecture and services",
+    topic: "Compute",
+    difficulty: 2,
+    question_text: "A developer wants to run code in response to an event without managing the underlying servers. Which Azure service is designed for this?",
+    options: ["Azure Virtual Machines", "Azure Functions", "Azure Files", "Azure Virtual Network"],
+    correct_index: 1,
+    base_explanation: "Azure Functions provides event-driven serverless compute, so developers can run code without managing the underlying server infrastructure."
+  },
+  {
+    id: "arch-008",
+    domain: "Azure architecture and services",
+    topic: "Networking",
+    difficulty: 2,
+    question_text: "A company needs a private network connection from its datacenter to Azure that does not traverse the public internet. Which service should it consider?",
+    options: ["VPN Gateway", "Azure DNS", "ExpressRoute", "Azure Load Balancer"],
+    correct_index: 2,
+    base_explanation: "ExpressRoute provides private connectivity between an organization's network and Microsoft cloud services. A VPN Gateway instead uses encrypted tunnels over the internet."
+  },
+  {
     id: "mgmt-001",
     domain: "Azure management and governance",
     topic: "Cost management",
@@ -156,9 +216,39 @@ export const sampleQuestions: Question[] = [
     options: ["A service's availability commitments and related terms", "The customer's password rules", "The exact monthly bill for every customer", "The physical location of all customer data"],
     correct_index: 0,
     base_explanation: "An SLA describes Microsoft's availability commitments for a service and may describe the terms that apply if those commitments are not met."
+  },
+  {
+    id: "mgmt-006",
+    domain: "Azure management and governance",
+    topic: "Cost management",
+    difficulty: 2,
+    question_text: "Which tool helps compare the costs of running workloads in an on-premises datacenter with the costs of moving them to Azure?",
+    options: ["Azure Pricing Calculator", "Total Cost of Ownership (TCO) Calculator", "Azure Advisor", "Azure Service Health"],
+    correct_index: 1,
+    base_explanation: "The TCO Calculator estimates and compares on-premises infrastructure costs with an Azure equivalent. The Pricing Calculator estimates the cost of planned Azure services."
+  },
+  {
+    id: "mgmt-007",
+    domain: "Azure management and governance",
+    topic: "Access control",
+    difficulty: 2,
+    question_text: "A manager wants to grant a team permission to read Azure resources without allowing them to change those resources. Which feature should they use?",
+    options: ["Azure Policy", "Resource locks", "Role-based access control (RBAC)", "Azure Advisor"],
+    correct_index: 2,
+    base_explanation: "Azure RBAC grants permissions to users, groups, or applications at a chosen scope. The Reader role allows viewing resources without changing them."
+  },
+  {
+    id: "mgmt-008",
+    domain: "Azure management and governance",
+    topic: "Monitoring",
+    difficulty: 2,
+    question_text: "Which service provides personalized information about Azure service issues, planned maintenance, and health events affecting your resources?",
+    options: ["Azure Service Health", "Azure Policy", "Azure Pricing Calculator", "Microsoft Entra ID"],
+    correct_index: 0,
+    base_explanation: "Azure Service Health reports service issues, planned maintenance, and health advisories relevant to the Azure services and regions you use."
   }
 ];
 
 export function selectBalancedQuestions(questions: Question[]) {
-  return domains.flatMap((domain) => questions.filter((question) => question.domain === domain).slice(0, 5));
+  return domains.flatMap((domain) => questions.filter((question) => question.domain === domain).slice(0, 8));
 }

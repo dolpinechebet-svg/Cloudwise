@@ -195,16 +195,16 @@ export default function App() {
             const localForDomain = sampleQuestions.filter((item) =>
               item.domain === domain && !remoteText.has(item.question_text.trim().toLowerCase())
             );
-            return [...remoteForDomain, ...localForDomain].slice(0, 5);
+            return [...remoteForDomain, ...localForDomain].slice(0, 8);
           });
-          if (balanced.length === 15) {
+          if (balanced.length === 24) {
             if (active) {
               setQuestions(balanced);
               setOnlineQuestionIds(new Set(remoteQuestions.map((item) => item.id)));
               if (remoteQuestions.length === 0) {
                 setAppNotice("The Supabase question bank is empty. Using the included original sample questions; answers are saved on this device.");
-              } else if (remoteQuestions.length < 15) {
-                setAppNotice("Your Supabase questions are included. A few original starter questions fill out this balanced 15-question diagnostic.");
+              } else if (remoteQuestions.length < 24) {
+                setAppNotice("Your Supabase questions are included. A few original starter questions fill out this balanced 24-question diagnostic.");
               }
               setQuestionsLoading(false);
             }
