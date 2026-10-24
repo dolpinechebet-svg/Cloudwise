@@ -1,6 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { BookOpenCheck, CalendarDays, ChartNoAxesColumn, Cloud, LoaderCircle, LogOut, MessageCircle, X } from "lucide-react";
+import { LoaderCircle, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import AppNavigation from "./components/AppNavigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 import type { AuthMode, AuthResult } from "./pages/AuthPage";
 import { domains, sampleQuestions } from "./data/questions";
@@ -64,8 +66,14 @@ function pathForScreen(screen: Screen): string {
 }
 
 export default function App() {
-  const [pathname, setPathname] = useState(() => window.location.pathname);
-  const [screen, setScreen] = useState<Screen>(() => screenForPath(window.location.pathname) ?? "welcome");
+  return <AppContent />;
+}
+
+function AppContent() {
+  const location = useLocation();
+  const routerNavigate = useNavigate();
+  const pathname = location.pathname;
+  const [screen, setScreen] = useState<Screen>(() => screenForPath(location.pathname) ?? "welcome");
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(!supabase);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -92,23 +100,12 @@ export default function App() {
   const toastError = screen === "onboarding" ? "" : pageError || learningError;
 
   const navigate = useCallback((path: string, replace = false) => {
-    if (window.location.pathname !== path) {
-      if (replace) window.history.replaceState(null, "", path);
-      else window.history.pushState(null, "", path);
-    }
-    setPathname(path);
-  }, []);
-
-  useEffect(() => {
-    const onPopState = () => setPathname(window.location.pathname);
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
-  useEffect(() => {
-    const target = pathForScreen(screen);
-    if (screen !== "welcome" && window.location.pathname !== target) navigate(target);
-  }, [navigate, screen]);
+    routerNavigate(path, { replace });
+  }, [routerNavigate]);
+  const goToScreen = useCallback((nextScreen: Screen) => {
+    setScreen(nextScreen);
+    navigate(pathForScreen(nextScreen));
+  }, [navigate]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -147,7 +144,7 @@ export default function App() {
     setAttempts([]);
     setFlashcards([]);
     if (!supabase) {
-      setScreen("onboarding");
+      goToScreen("onboarding");
       return;
     }
     const { data, error } = await supabase
@@ -157,7 +154,7 @@ export default function App() {
       .maybeSingle();
     if (error) {
       setPageError(`We couldn't load your profile: ${error.message}`);
-      setScreen("onboarding");
+      goToScreen("onboarding");
       return;
     }
     if (data?.onboarding_completed) {
@@ -167,12 +164,12 @@ export default function App() {
         hours_per_week: data.hours_per_week
       };
       setProfile(nextProfile);
-      setScreen("quiz");
+      goToScreen("quiz");
     } else {
       setProfile(null);
-      setScreen("onboarding");
+      goToScreen("onboarding");
     }
-  }, []);
+  }, [goToScreen]);
 
   useEffect(() => {
     let active = true;
@@ -221,7 +218,7 @@ export default function App() {
       active = false;
       unsubscribe?.();
     };
-  }, [navigate, openForSession]);
+  }, [goToScreen, navigate, openForSession]);
 
   useEffect(() => {
     if (screen !== "quiz") return;
@@ -464,7 +461,7 @@ export default function App() {
     setStudyPlanId(null);
     setDemo(true);
     setPageError("");
-    setScreen("onboarding");
+    goToScreen("onboarding");
   }
 
   async function saveProfile(nextProfile: Profile) {
@@ -485,7 +482,7 @@ export default function App() {
         setDemo(true);
       }
       setProfile(nextProfile);
-      setScreen("quiz");
+      goToScreen("quiz");
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Your profile could not be saved.");
     } finally {
@@ -792,8 +789,7 @@ export default function App() {
     setFlashcards([]);
     setStudyPlan(null);
     setStudyPlanId(null);
-    setScreen("welcome");
-    navigate("/", true);
+    goToScreen("welcome");
   }
 
   if (pathname === "/auth") {
@@ -817,74 +813,30 @@ export default function App() {
     );
   }
 
+  const showNavigation = screen !== "onboarding";
+  const userName = profile?.display_name
+    ?? session?.user.user_metadata.display_name
+    ?? session?.user.email?.split("@")[0]
+    ?? "Learner";
+
   return (
     <ProtectedRoute
       loading={!authReady}
       authenticated={Boolean(session) || demo}
       onUnauthenticated={() => navigate("/auth", true)}
     >
-    <div className="app-shell">
-      {screen !== "onboarding" && <header className="app-header">
-        <a className="brand" href="/quiz" onClick={(event) => { event.preventDefault(); setScreen("quiz"); }} aria-label="Cloudwise">
-          <span className="brand-icon"><Cloud size={20} strokeWidth={2.5} /></span>
-          <span>cloudwise<span className="brand-period">.</span></span>
-        </a>
-        <nav className="study-nav" aria-label={"Study navigation"}>
-          <button
-            type="button"
-            className={screen === "dashboard" ? "study-nav-button active" : "study-nav-button"}
-            aria-label={"Open readiness dashboard"}
-            aria-current={screen === "dashboard" ? "page" : undefined}
-            onClick={() => { setPracticeTopic(null); setScreen("dashboard"); }}
-          >
-            <ChartNoAxesColumn size={17} /><span>{"Readiness"}</span>
-          </button>
-          <button
-            type="button"
-            className={screen === "flashcards" ? "study-nav-button active" : "study-nav-button"}
-            aria-label={"Open flashcards"}
-            aria-current={screen === "flashcards" ? "page" : undefined}
-            onClick={() => setScreen("flashcards")}
-          >
-            <BookOpenCheck size={17} /><span>{"Flashcards"}</span>
-            {flashcards.length > 0 && <span className="nav-count">{flashcards.length}</span>}
-          </button>
-          <button
-            type="button"
-            className={screen === "planner" ? "study-nav-button active" : "study-nav-button"}
-            aria-label={"Open your study planner"}
-            aria-current={screen === "planner" ? "page" : undefined}
-            onClick={() => setScreen("planner")}
-          >
-            <CalendarDays size={17} /><span>{"Study plan"}</span>
-          </button>
-          <button
-            type="button"
-            className={screen === "chat" ? "study-nav-button active" : "study-nav-button"}
-            aria-label={"Open the study buddy chat"}
-            aria-current={screen === "chat" ? "page" : undefined}
-            onClick={() => setScreen("chat")}
-          >
-            <MessageCircle size={17} /><span>{"Study chat"}</span>
-          </button>
-          <button
-            type="button"
-            className={screen === "quiz" ? "study-nav-button active" : "study-nav-button"}
-            aria-label={"Open diagnostic quiz"}
-            aria-current={screen === "quiz" ? "page" : undefined}
-            onClick={() => { setPracticeTopic(null); setScreen("quiz"); }}
-          >
-            <span>{"Quiz"}</span>
-          </button>
-        </nav>
-        <div className="app-header-actions">
-          {demo && <span className="demo-badge">{"You're exploring in demo mode."}</span>}
-          {session && <button className="icon-text-button" type="button" onClick={() => void signOut()} aria-label={"Log out"}>
-            <LogOut size={16} /><span>{"Log out"}</span>
-          </button>}
-          {demo && <button className="icon-text-button" type="button" onClick={() => void signOut()} aria-label={"Exit demo"}>{"Exit demo"}</button>}
-        </div>
-      </header>}
+    <div className={`app-layout${session && showNavigation ? " has-sidebar" : ""}${demo && showNavigation ? " demo-layout" : ""}`}>
+      {showNavigation && (
+        <AppNavigation
+          signedIn={Boolean(session)}
+          userName={userName}
+          onLogout={() => void signOut()}
+          onQuizNavigate={() => setPracticeTopic(null)}
+        />
+      )}
+      {demo && showNavigation && <div className="demo-mode-badge">{"You're exploring in demo mode."}</div>}
+      <div className="app-content">
+      <div className="app-shell">
 
       {appNotice && screen === "quiz" && <p className="app-notice" role="status">{appNotice}</p>}
       {errorToast && (
@@ -911,7 +863,7 @@ export default function App() {
           <Onboarding
             initialName={session?.user.user_metadata.display_name ?? session?.user.user_metadata.full_name ?? session?.user.email?.split("@")[0] ?? "Learner"}
             onSubmit={saveProfile}
-            onBack={() => setScreen(session ? "quiz" : "welcome")}
+            onBack={() => goToScreen(session ? "quiz" : "welcome")}
             busy={busy}
             error={pageError}
           />
@@ -930,7 +882,7 @@ export default function App() {
               onAnswer={saveAnswer}
               onExplain={explainAnswer}
               onWrongAnswer={saveWrongAnswer}
-              onExit={() => { setPracticeTopic(null); setScreen("dashboard"); }}
+              onExit={() => { setPracticeTopic(null); goToScreen("dashboard"); }}
             />
           )}
         </Suspense>
@@ -949,10 +901,10 @@ export default function App() {
                 setAppNotice("");
                 setPracticeTopic(topic);
               }
-              setScreen("quiz");
+              goToScreen("quiz");
             }}
-            onFlashcards={() => setScreen("flashcards")}
-            onDiagnostic={() => { setPracticeTopic(null); setScreen("quiz"); }}
+            onFlashcards={() => goToScreen("flashcards")}
+            onDiagnostic={() => { setPracticeTopic(null); goToScreen("quiz"); }}
           />
         </Suspense>
       )}
@@ -993,6 +945,8 @@ export default function App() {
           <span className="footer-disclaimer">{"Unofficial AZ-900 study tool. Not affiliated with or endorsed by Microsoft."}</span>
         </footer>
       )}
+      </div>
+      </div>
     </div>
     </ProtectedRoute>
   );
