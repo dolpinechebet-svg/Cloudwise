@@ -1,7 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { BookOpenCheck, CalendarDays, ChartNoAxesColumn, Cloud, LoaderCircle, LogOut, MessageCircle, X } from "lucide-react";
-import type { WelcomeProps } from "./pages/Welcome";
+import ProtectedRoute from "./components/ProtectedRoute";
+import type { AuthMode, AuthResult } from "./pages/AuthPage";
 import { domains, sampleQuestions } from "./data/questions";
 import { nextReviewDate } from "./lib/readiness";
 import { calculateReadiness } from "./lib/readiness";
@@ -14,6 +15,7 @@ import type {
 } from "./types";
 
 const Welcome = lazy(() => import("./pages/Welcome"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const DiagnosticQuiz = lazy(() => import("./pages/DiagnosticQuiz"));
 const ReadinessDashboard = lazy(() => import("./pages/ReadinessDashboard"));
@@ -22,8 +24,6 @@ const StudyPlanner = lazy(() => import("./pages/StudyPlanner"));
 const StudyBuddyChat = lazy(() => import("./pages/StudyBuddyChat"));
 
 type Screen = "welcome" | "onboarding" | "quiz" | "dashboard" | "flashcards" | "planner" | "chat";
-type AuthMode = WelcomeProps["onAuth"] extends (...args: infer A) => unknown ? A[0] : never;
-
 interface SavedAttempt {
   id?: string;
   question_id: string;
@@ -38,14 +38,40 @@ const LOCAL_ATTEMPTS_KEY = "cloudwise-attempts";
 const LOCAL_FLASHCARDS_KEY = "cloudwise-flashcards";
 const LOCAL_STUDY_PLAN_KEY = "cloudwise-study-plan";
 
+function screenForPath(path: string): Screen | null {
+  const routes: Record<string, Screen> = {
+    "/onboarding": "onboarding",
+    "/quiz": "quiz",
+    "/dashboard": "dashboard",
+    "/flashcards": "flashcards",
+    "/planner": "planner",
+    "/chat": "chat"
+  };
+  return routes[path] ?? null;
+}
+
+function pathForScreen(screen: Screen): string {
+  const routes: Record<Screen, string> = {
+    welcome: "/",
+    onboarding: "/onboarding",
+    quiz: "/quiz",
+    dashboard: "/dashboard",
+    flashcards: "/flashcards",
+    planner: "/planner",
+    chat: "/chat"
+  };
+  return routes[screen];
+}
+
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("welcome");
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+  const [screen, setScreen] = useState<Screen>(() => screenForPath(window.location.pathname) ?? "welcome");
   const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(!supabase);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [demo, setDemo] = useState(false);
   const [busy, setBusy] = useState(false);
   const [pageError, setPageError] = useState("");
-  const [authError, setAuthError] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [onlineQuestionIds, setOnlineQuestionIds] = useState<Set<string>>(new Set());
   const [appNotice, setAppNotice] = useState("");
@@ -65,6 +91,42 @@ export default function App() {
   const readiness = useMemo(() => calculateReadiness(attempts), [attempts]);
   const toastError = screen === "onboarding" ? "" : pageError || learningError;
 
+  const navigate = useCallback((path: string, replace = false) => {
+    if (window.location.pathname !== path) {
+      if (replace) window.history.replaceState(null, "", path);
+      else window.history.pushState(null, "", path);
+    }
+    setPathname(path);
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => setPathname(window.location.pathname);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  useEffect(() => {
+    const target = pathForScreen(screen);
+    if (screen !== "welcome" && window.location.pathname !== target) navigate(target);
+  }, [navigate, screen]);
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (pathname === "/" || pathname === "/auth") {
+      if (pathname === "/auth" && session && !demo) {
+        navigate(pathForScreen(screen === "welcome" ? "quiz" : screen), true);
+      }
+      return;
+    }
+    const targetScreen = screenForPath(pathname);
+    if (!session && !demo) {
+      navigate("/auth", true);
+      return;
+    }
+    if (targetScreen) setScreen(targetScreen);
+    else navigate("/auth", true);
+  }, [authReady, demo, navigate, pathname, screen, session]);
+
   useEffect(() => {
     if (!toastError) {
       setErrorToast("");
@@ -78,22 +140,6 @@ export default function App() {
     }, 6500);
     return () => window.clearTimeout(timeout);
   }, [toastError]);
-
-  const restoreDemoProfile = useCallback(() => {
-    const saved = window.localStorage.getItem(LOCAL_PROFILE_KEY);
-    if (!saved) return false;
-    try {
-      const parsed = JSON.parse(saved) as Profile;
-      if (!parsed.display_name || !parsed.exam_date) return false;
-      setProfile(parsed);
-      setDemo(true);
-      setScreen("quiz");
-      return true;
-    } catch {
-      setAppNotice("Saved demo profile could not be read. You can start a fresh demo.");
-      return false;
-    }
-  }, []);
 
   const openForSession = useCallback(async (activeSession: Session) => {
     setSession(activeSession);
@@ -133,45 +179,49 @@ export default function App() {
 
     async function restoreSession() {
       if (!supabase) {
-        if (!restoreDemoProfile()) setScreen("welcome");
+        setAuthReady(true);
         return;
       }
+      const subscription = supabase.auth.onAuthStateChange((event, nextSession) => {
+        if (!active) return;
+        setSession(nextSession);
+        if (nextSession && (event === "SIGNED_IN" || event === "USER_UPDATED")) {
+          void openForSession(nextSession);
+        }
+        if (event === "SIGNED_OUT") {
+          setProfile(null);
+          setDemo(false);
+          setAttempts([]);
+          setFlashcards([]);
+          setStudyPlan(null);
+          setStudyPlanId(null);
+          setScreen("welcome");
+          navigate("/auth", true);
+        }
+      }).data.subscription;
       const { data, error } = await supabase.auth.getSession();
-      if (!active) return;
-      if (error) {
-        setAuthError(error.message);
-        if (!restoreDemoProfile()) setScreen("welcome");
+      if (!active) {
+        subscription.unsubscribe();
         return;
       }
-      if (data.session) {
+      if (error) {
+        setPageError("We couldn't restore your sign-in. Please log in again.");
+      } else if (data.session) {
+        setSession(data.session);
         await openForSession(data.session);
-      } else if (!restoreDemoProfile()) {
-        setScreen("welcome");
       }
+      setAuthReady(true);
+      return () => subscription.unsubscribe();
     }
 
-    void restoreSession();
-    const subscription = supabase?.auth.onAuthStateChange((_event, nextSession) => {
-      if (!active) return;
-      if (nextSession) {
-        void openForSession(nextSession);
-      } else {
-        setSession(null);
-        setProfile(null);
-        setDemo(false);
-        setAttempts([]);
-        setFlashcards([]);
-        setStudyPlan(null);
-        setStudyPlanId(null);
-        setScreen("welcome");
-      }
-    }).data.subscription;
+    let unsubscribe: (() => void) | undefined;
+    void restoreSession().then((cleanup) => { unsubscribe = cleanup; });
 
     return () => {
       active = false;
-      subscription?.unsubscribe();
+      unsubscribe?.();
     };
-  }, [openForSession, restoreDemoProfile]);
+  }, [navigate, openForSession]);
 
   useEffect(() => {
     if (screen !== "quiz") return;
@@ -341,48 +391,67 @@ export default function App() {
     return () => { active = false; };
   }, [screen, session]);
 
-  async function authenticate(mode: AuthMode, email: string, password: string) {
-    setAuthError("");
+  async function authenticate(mode: AuthMode, email: string, password: string, displayName: string): Promise<AuthResult> {
     if (!supabase) {
-      setAuthError("Connect Supabase in .env.local to use email authentication. You can explore the local demo without an account.");
-      return false;
+      return { ok: false, message: "Online sign-in is not configured. Add your Supabase URL and anon key to .env.local." };
     }
     setBusy(true);
     try {
       const result = mode === "signup"
-        ? await supabase.auth.signUp({ email, password })
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { display_name: displayName } }
+          })
         : await supabase.auth.signInWithPassword({ email, password });
       if (result.error) {
-        setAuthError(result.error.message);
-        return false;
+        const message = result.error.message.toLowerCase();
+        if (mode === "signin") return { ok: false, message: "Wrong email or password." };
+        if (message.includes("already") || message.includes("registered") || message.includes("exists")) {
+          return { ok: false, message: "That email is already registered." };
+        }
+        if (message.includes("password")) return { ok: false, message: "Your password must be at least 8 characters." };
+        if (message.includes("email")) return { ok: false, message: "Enter a valid email address." };
+        return { ok: false, message: "We couldn't create your account right now. Please try again." };
       }
-      if (result.data.session) await openForSession(result.data.session);
-      return true;
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "We couldn't complete that request. Please check your details and try again.");
-      return false;
+      if (!result.data.session) return { ok: true, message: "Check your email to confirm your account." };
+
+      const today = new Date();
+      const examDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const { error: profileError } = await supabase.from("profiles").upsert({
+        id: result.data.session.user.id,
+        display_name: displayName,
+        exam_date: examDate,
+        hours_per_week: 5,
+        onboarding_completed: false
+      }, { onConflict: "id" });
+      if (profileError && profileError.code !== "42P01" && profileError.code !== "PGRST205") {
+        return { ok: false, message: "Your account was created, but we couldn't save your display name. Please try again." };
+      }
+      await openForSession(result.data.session);
+      return { ok: true };
+    } catch {
+      return {
+        ok: false,
+        message: mode === "signin" ? "We couldn't log you in right now. Please try again." : "We couldn't create your account right now. Please try again."
+      };
     } finally {
       setBusy(false);
     }
   }
 
-  async function googleSignIn() {
-    setAuthError("");
+  async function sendPasswordReset(email: string): Promise<AuthResult> {
     if (!supabase) {
-      setAuthError("Connect Supabase in .env.local to use Google sign-in. You can explore the local demo without an account.");
-      return;
+      return { ok: false, message: "Online sign-in is not configured. Add your Supabase URL and anon key to .env.local." };
     }
-    setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`
       });
-      if (error) setAuthError(error.message);
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : "We couldn't complete that request. Please check your details and try again.");
-    } finally {
-      setBusy(false);
+      if (error) return { ok: false, message: "We couldn't send a reset email right now. Please try again." };
+      return { ok: true, message: "If an account uses that email, a password reset link is on its way." };
+    } catch {
+      return { ok: false, message: "We couldn't send a reset email right now. Please try again." };
     }
   }
 
@@ -395,7 +464,6 @@ export default function App() {
     setStudyPlanId(null);
     setDemo(true);
     setPageError("");
-    setAuthError("");
     setScreen("onboarding");
   }
 
@@ -711,7 +779,7 @@ export default function App() {
   async function signOut() {
     if (supabase && session) {
       const { error } = await supabase.auth.signOut();
-      if (error) setPageError(`Could not sign out: ${error.message}`);
+      if (error) setPageError("We couldn't log you out right now. Please try again.");
       return;
     }
     window.localStorage.removeItem(LOCAL_PROFILE_KEY);
@@ -725,29 +793,39 @@ export default function App() {
     setStudyPlan(null);
     setStudyPlanId(null);
     setScreen("welcome");
+    navigate("/", true);
   }
 
-  const welcomeProps: WelcomeProps = {
-    onAuth: authenticate,
-    onGoogle: googleSignIn,
-    onDemo: beginDemo,
-    error: authError,
-    busy,
-    clearError: () => setAuthError(""),
-  };
-
-  if (screen === "welcome") {
+  if (pathname === "/auth") {
     return (
       <Suspense fallback={<LoadingPage showDisclaimer />}>
-        <Welcome {...welcomeProps} />
+        <AuthPage
+          configured={Boolean(supabase)}
+          busy={busy}
+          onSubmit={authenticate}
+          onForgotPassword={sendPasswordReset}
+        />
+      </Suspense>
+    );
+  }
+
+  if (pathname === "/" && screen === "welcome") {
+    return (
+      <Suspense fallback={<LoadingPage showDisclaimer />}>
+        <Welcome onDemo={beginDemo} />
       </Suspense>
     );
   }
 
   return (
+    <ProtectedRoute
+      loading={!authReady}
+      authenticated={Boolean(session) || demo}
+      onUnauthenticated={() => navigate("/auth", true)}
+    >
     <div className="app-shell">
       {screen !== "onboarding" && <header className="app-header">
-        <a className="brand" href="#app" onClick={(event) => { event.preventDefault(); setScreen("quiz"); }} aria-label="Cloudwise">
+        <a className="brand" href="/quiz" onClick={(event) => { event.preventDefault(); setScreen("quiz"); }} aria-label="Cloudwise">
           <span className="brand-icon"><Cloud size={20} strokeWidth={2.5} /></span>
           <span>cloudwise<span className="brand-period">.</span></span>
         </a>
@@ -801,9 +879,10 @@ export default function App() {
         </nav>
         <div className="app-header-actions">
           {demo && <span className="demo-badge">{"You're exploring in demo mode."}</span>}
-          <button className="icon-text-button" type="button" onClick={() => void signOut()} aria-label={"Sign out"}>
-            <LogOut size={16} /><span>{"Sign out"}</span>
-          </button>
+          {session && <button className="icon-text-button" type="button" onClick={() => void signOut()} aria-label={"Log out"}>
+            <LogOut size={16} /><span>{"Log out"}</span>
+          </button>}
+          {demo && <button className="icon-text-button" type="button" onClick={() => void signOut()} aria-label={"Exit demo"}>{"Exit demo"}</button>}
         </div>
       </header>}
 
@@ -830,9 +909,9 @@ export default function App() {
       {screen === "onboarding" && (
         <Suspense fallback={<LoadingPage showDisclaimer />}>
           <Onboarding
-            initialName={session?.user.user_metadata.full_name ?? session?.user.email?.split("@")[0] ?? "Learner"}
+            initialName={session?.user.user_metadata.display_name ?? session?.user.user_metadata.full_name ?? session?.user.email?.split("@")[0] ?? "Learner"}
             onSubmit={saveProfile}
-            onBack={() => setScreen("welcome")}
+            onBack={() => setScreen(session ? "quiz" : "welcome")}
             busy={busy}
             error={pageError}
           />
@@ -915,6 +994,7 @@ export default function App() {
         </footer>
       )}
     </div>
+    </ProtectedRoute>
   );
 }
 

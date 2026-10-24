@@ -68,6 +68,17 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.045em; }
 
 .auth-card { position: relative; width: 100%; max-width: 425px; justify-self: end; padding: clamp(25px, 3vw, 36px); border: 1px solid rgba(229, 230, 218, 0.8); border-radius: 24px; background: var(--paper-raised); box-shadow: var(--shadow); }
 .auth-card::before { position: absolute; z-index: -1; top: -15px; right: 20px; width: 116px; height: 116px; border-radius: 36px; background: #f3e8c8; content: ""; transform: rotate(14deg); }
+.landing-card-copy { margin: -8px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.landing-primary { width: 100%; }
+.landing-setup { margin-top: 15px; }
+.auth-page-content { display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) minmax(320px, 425px); align-items: center; gap: clamp(32px, 8vw, 110px); padding: 50px 0 70px; }
+.auth-page-intro { max-width: 550px; }
+.auth-page-intro h1 { margin: 19px 0 14px; font-size: clamp(38px, 5vw, 62px); font-weight: 760; line-height: 1.04; }
+.auth-page-intro p { max-width: 460px; color: var(--muted); font-size: 16px; line-height: 1.75; }
+.auth-route-card { justify-self: stretch; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: -3px 0 21px; padding: 4px; border-radius: 12px; background: #f0f2eb; }
+.auth-tab { min-height: 43px; border: 0; border-radius: 9px; color: var(--muted); background: transparent; font-size: 12px; font-weight: 750; cursor: pointer; }
+.auth-tab.active { color: var(--teal-dark); background: var(--paper-raised); box-shadow: 0 2px 7px rgba(29, 58, 49, 0.08); }
 .auth-card-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
 .card-kicker { color: #a17b31; font-size: 10px; font-weight: 800; letter-spacing: 0.15em; }
 .auth-card h2 { margin: 6px 0 0; font-size: 28px; font-weight: 750; }
@@ -84,14 +95,20 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.045em; }
 .button-secondary:hover:not(:disabled) { border-color: #b8c9bd; background: #f8faf6; }
 .button-quiet { color: var(--teal); background: transparent; }
 .button-quiet:hover:not(:disabled) { background: var(--teal-soft); }
-.google-button, .auth-submit, .demo-button { width: 100%; }
+.auth-submit, .demo-button { width: 100%; }
 .google-mark { display: inline-grid; width: 21px; height: 21px; place-items: center; border-radius: 50%; color: #4285f4; font-family: Arial, sans-serif; font-size: 18px; font-weight: 800; }
 .divider { display: flex; align-items: center; gap: 12px; margin: 19px 0; color: #89918a; font-size: 11px; }
 .divider::before, .divider::after { flex: 1; height: 1px; background: var(--line); content: ""; }
 .auth-form { display: grid; gap: 9px; }
 .auth-form label, .onboarding-form > label { display: flex; align-items: center; gap: 8px; margin: 5px 0 0; color: #35534b; font-size: 12px; font-weight: 700; }
-.auth-form input, .onboarding-form > input { width: 100%; min-height: 46px; padding: 0 13px; border: 1px solid #dfe3da; border-radius: 10px; outline: 0; color: var(--ink); background: var(--paper-raised); transition: border-color 150ms ease, box-shadow 150ms ease; }
+.auth-form input, .onboarding-form > input { width: 100%; min-height: 48px; padding: 0 13px; border: 1px solid #dfe3da; border-radius: 10px; outline: 0; color: var(--ink); background: var(--paper-raised); transition: border-color 150ms ease, box-shadow 150ms ease; }
 .auth-form input:focus, .onboarding-form input:focus { border-color: #529488; box-shadow: 0 0 0 3px rgba(14, 98, 88, 0.1); }
+.password-field { position: relative; }
+.password-field input { padding-right: 50px; }
+.password-toggle { position: absolute; top: 4px; right: 5px; display: grid; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 9px; color: var(--muted); background: transparent; cursor: pointer; }
+.password-toggle:hover { color: var(--teal); background: var(--teal-soft); }
+.forgot-password { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; justify-self: start; padding: 3px 0; border: 0; font-size: 12px; font-weight: 700; cursor: pointer; }
+.forgot-password:disabled { cursor: wait; opacity: 0.65; }
 .auth-submit { margin-top: 7px; }
 .auth-switch { display: block; width: 100%; margin: 14px 0 0; padding: 8px; border: 0; font-size: 12px; font-weight: 700; cursor: pointer; }
 .text-button { color: var(--teal); background: transparent; }
@@ -107,6 +124,7 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.045em; }
 .form-success { color: #22644d; background: #e6f3eb; }
 .site-footer { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: auto; padding: 20px 0 24px; border-top: 1px solid var(--line); color: #7c8980; font-size: 11px; }
 .footer-disclaimer { text-align: right; }
+.auth-page-footer > span:first-child { font-size: 14px; font-weight: 800; letter-spacing: -0.04em; }
 
 .app-shell { display: flex; flex-direction: column; width: min(100% - 40px, 1000px); margin: 0 auto; }
 .app-header { min-height: 76px; border-bottom: 1px solid var(--line); }
@@ -441,6 +459,7 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.045em; }
 
 @media (max-width: 850px) {
   .welcome-page { padding: 0 28px; }
+  .auth-page-content { gap: 32px; }
   .welcome-grid { grid-template-columns: minmax(0, 1fr) minmax(320px, 0.86fr); gap: 30px; }
   .welcome-copy h1 { font-size: clamp(38px, 5.5vw, 56px); }
   .topbar-caption { display: none; }
@@ -454,6 +473,15 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.045em; }
 }
 @media (max-width: 680px) {
   .welcome-page { padding: 0 20px; }
+  .auth-page-content { grid-template-columns: 1fr; gap: 12px; padding: 32px 0 38px; }
+  .auth-page-intro { max-width: 560px; }
+  .auth-page-intro h1 { margin: 14px 0 9px; font-size: clamp(34px, 9vw, 46px); }
+  .auth-page-intro p { margin-bottom: 10px; font-size: 13px; }
+  .auth-route-card { max-width: none; justify-self: stretch; padding: 22px; }
+  .auth-page-footer, .site-footer { align-items: flex-start; flex-direction: column; font-size: 10px; }
+  .auth-page-footer .footer-disclaimer, .site-footer .footer-disclaimer { text-align: left; }
+  .landing-login { min-height: 42px; padding: 0 12px; }
+  .topbar-caption { display: none; }
   .topbar { min-height: 70px; }
   .topbar-actions { gap: 8px; }
   .welcome-grid { grid-template-columns: 1fr; gap: 33px; padding: 42px 0 38px; }
