@@ -107,6 +107,23 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.045em; }
 .password-field input { padding-right: 50px; }
 .password-toggle { position: absolute; top: 4px; right: 5px; display: grid; width: 40px; height: 40px; place-items: center; border: 0; border-radius: 9px; color: var(--muted); background: transparent; cursor: pointer; }
 .password-toggle:hover { color: var(--teal); background: var(--teal-soft); }
+.password-requirements { display: grid; gap: 9px; margin: -2px 0 3px; }
+.password-requirements ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 9px; margin: 0; padding: 0; list-style: none; }
+.password-rule { display: flex; min-width: 0; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+.password-rule.passed { color: var(--green); }
+.password-rule-mark { display: grid; width: 16px; height: 16px; flex: 0 0 16px; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: #fff; background: transparent; }
+.password-rule.passed .password-rule-mark { border-color: var(--green); background: var(--green); }
+.password-strength { display: flex; align-items: center; gap: 10px; }
+.password-strength-track { height: 5px; flex: 1; overflow: hidden; border-radius: 999px; background: var(--line); }
+.password-strength-fill { display: block; height: 100%; border-radius: inherit; transition: width 180ms ease, background-color 180ms ease; }
+.strength-weak { background: #bd6657; }
+.strength-fair { background: var(--amber); }
+.strength-strong { background: var(--green); }
+.password-strength-label { min-width: 78px; color: var(--muted); font-size: 10px; font-weight: 700; text-align: right; }
+.strength-text-weak { color: #a34d40; }
+.strength-text-fair { color: #99721c; }
+.strength-text-strong { color: var(--green); }
+.field-hint-error { margin: -3px 0 1px; color: var(--red); font-size: 10px; line-height: 1.4; }
 .forgot-password { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; justify-self: start; padding: 3px 0; border: 0; font-size: 12px; font-weight: 700; cursor: pointer; }
 .forgot-password:disabled { cursor: wait; opacity: 0.65; }
 .auth-submit { margin-top: 7px; }
@@ -713,6 +730,12 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -0.045em; }
   .benefit, .hero-description, .hero-note, .onboarding-intro, .quiz-intro > p { color: var(--muted); }
   .benefit-icon, .auth-mark { border-color: #31443b; color: #94d0bd; background: #21372f; }
   .auth-form input, .onboarding-form > input, .answer-option, .answer-reveal { border-color: #34463e; color: var(--ink); background: #16221f; }
+  .password-rule.passed, .strength-text-strong { color: #a9deba; }
+  .strength-text-weak { color: #ffc0b4; }
+  .strength-text-fair { color: #efd78f; }
+  .password-rule-mark { border-color: #42564a; }
+  .password-rule.passed .password-rule-mark { border-color: #8fd0a9; color: #15231b; background: #8fd0a9; }
+  .field-hint-error { color: #ffc0b4; }
   .auth-form label, .onboarding-form > label { color: #bed0c4; }
   .button-secondary { border-color: #3a4b43; color: var(--ink); background: #1b2925; }
   .button-secondary:hover:not(:disabled) { background: #24342e; }

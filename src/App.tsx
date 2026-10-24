@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { LoaderCircle, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -75,6 +75,7 @@ function AppContent() {
   const pathname = location.pathname;
   const [screen, setScreen] = useState<Screen>(() => screenForPath(location.pathname) ?? "welcome");
   const [session, setSession] = useState<Session | null>(null);
+  const signingUp = useRef(false);
   const [authReady, setAuthReady] = useState(!supabase);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [demo, setDemo] = useState(false);
@@ -182,7 +183,7 @@ function AppContent() {
       const subscription = supabase.auth.onAuthStateChange((event, nextSession) => {
         if (!active) return;
         setSession(nextSession);
-        if (nextSession && (event === "SIGNED_IN" || event === "USER_UPDATED")) {
+        if (nextSession && ((event === "SIGNED_IN" && !signingUp.current) || event === "USER_UPDATED")) {
           void openForSession(nextSession);
         }
         if (event === "SIGNED_OUT") {
@@ -394,24 +395,25 @@ function AppContent() {
     }
     setBusy(true);
     try {
+      if (mode === "signup") signingUp.current = true;
       const result = mode === "signup"
         ? await supabase.auth.signUp({
             email,
             password,
-            options: { data: { display_name: displayName } }
+            options: { data: { full_name: displayName, display_name: displayName } }
           })
         : await supabase.auth.signInWithPassword({ email, password });
+      if (mode === "signup") signingUp.current = false;
       if (result.error) {
         const message = result.error.message.toLowerCase();
         if (mode === "signin") return { ok: false, message: "Wrong email or password." };
         if (message.includes("already") || message.includes("registered") || message.includes("exists")) {
-          return { ok: false, message: "That email is already registered." };
+          return { ok: false, message: "That email is already registered. Try logging in." };
         }
-        if (message.includes("password")) return { ok: false, message: "Your password must be at least 8 characters." };
-        if (message.includes("email")) return { ok: false, message: "Enter a valid email address." };
-        return { ok: false, message: "We couldn't create your account right now. Please try again." };
+        if (message.includes("password")) return { ok: false, message: "Password does not meet the requirements." };
+        return { ok: false, message: "Something went wrong. Please try again." };
       }
-      if (!result.data.session) return { ok: true, message: "Check your email to confirm your account." };
+      if (!result.data.session) return { ok: true, message: "Check your email to confirm your account, then log in." };
 
       const today = new Date();
       const examDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -423,16 +425,20 @@ function AppContent() {
         onboarding_completed: false
       }, { onConflict: "id" });
       if (profileError && profileError.code !== "42P01" && profileError.code !== "PGRST205") {
-        return { ok: false, message: "Your account was created, but we couldn't save your display name. Please try again." };
+        return { ok: false, message: "Something went wrong. Please try again." };
       }
-      await openForSession(result.data.session);
+      setSession(result.data.session);
+      setDemo(false);
+      setProfile({ display_name: displayName, exam_date: examDate, hours_per_week: 5 });
+      goToScreen("dashboard");
       return { ok: true };
     } catch {
       return {
         ok: false,
-        message: mode === "signin" ? "We couldn't log you in right now. Please try again." : "We couldn't create your account right now. Please try again."
+        message: mode === "signin" ? "Wrong email or password." : "Something went wrong. Please try again."
       };
     } finally {
+      signingUp.current = false;
       setBusy(false);
     }
   }
